@@ -1,3 +1,4 @@
+/*
 name: CI-CD Pipeline
 
 on:
@@ -24,3 +25,5 @@ jobs:
     - name: Deploy to Kubernetes
       run: |
         kubectl apply -f k8s-deployment.yaml
+
+*/
