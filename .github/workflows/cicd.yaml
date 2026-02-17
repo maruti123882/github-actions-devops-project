@@ -13,88 +13,55 @@ jobs:
 
     steps:
 
-    # ---------------------------
-    # Step 1: Checkout Source Code
-    # ---------------------------
+    # Step 1 - Checkout
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # ---------------------------
-    # Step 2: Run Tests (Before Build)
-    # ---------------------------
+    # Step 2 - Run Tests
     - name: Run Unit Tests
       run: |
         echo "Running tests..."
-        # Example for Python
         if [ -f requirements.txt ]; then
           pip install -r requirements.txt
+          pip install pytest
           pytest || exit 1
         fi
 
-        # Example for Node
-        if [ -f package.json ]; then
-          npm install
-          npm test || exit 1
-        fi
-
-    # ---------------------------
-    # Step 3: Set Image Tag (Git SHA)
-    # ---------------------------
+    # Step 3 - Set Image Tag
     - name: Set Image Tag
       run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
-    # ---------------------------
-    # Step 4: Docker Login
-    # ---------------------------
+    # Step 4 - Docker Login
     - name: Docker Login
       run: |
         echo ${{ secrets.DOCKER_PASSWORD }} | docker login \
         -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
-    # ---------------------------
-    # Step 5: Build Docker Image
-    # ---------------------------
+    # Step 5 - Build Docker Image
     - name: Build Docker Image
       run: |
         docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
         docker tag ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
         ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
-    # ---------------------------
-    # Step 6: Push Docker Images
-    # ---------------------------
-    - name: Push Docker Image
+    # Step 6 - Push Docker Image
+    - name: Push Docker Images
       run: |
         docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
         docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
-    # ---------------------------
-    # Step 7: Setup Kubectl
-    # ---------------------------
+    # Step 7 - Setup Kubectl
     - name: Setup Kubectl
       uses: azure/setup-kubectl@v3
-      with:
-        version: 'latest'
 
-    # ---------------------------
-    # Step 8: Configure Kubeconfig
-    # ---------------------------
-    - name: Configure Kubernetes Credentials
+    # Step 8 - Configure Kubeconfig
+    - name: Configure Kubeconfig
       run: |
         mkdir -p $HOME/.kube
         echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
 
-    # ---------------------------
-    # Step 9: Update Image in K8s YAML
-    # ---------------------------
-    - name: Update Kubernetes Image
-      run: |
-        sed -i "s|IMAGE_PLACEHOLDER|${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}|g" k8s-deployment.yaml
-
-    # ---------------------------
-    # Step 10: Deploy to Kubernetes
-    # ---------------------------
-    - name: Deploy to Kubernetes
+    # Step 9 - Deploy To Kubernetes
+    - name: Deploy To Kubernetes
       run: |
         kubectl apply -f k8s-deployment.yaml
         kubectl rollout status deployment/devops-app

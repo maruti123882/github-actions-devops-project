@@ -15,6 +15,7 @@ spec:
       containers:
       - name: devops-app
         image: maruti8861/devops-app:latest
+
         ports:
         - containerPort: 5000
 
